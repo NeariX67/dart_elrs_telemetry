@@ -1,3 +1,4 @@
+import 'package:elrs_telem/models.dart';
 import 'package:elrs_telem/telem_packet.dart';
 import 'package:flutter/foundation.dart';
 
@@ -40,6 +41,18 @@ class ElrsTelem {
             packet.payload.sublist(12, 14).buffer.asByteData().getUint16(0) -
             1000; // offset 1000, meters
         int gpsSatellites = packet.payload[14];
+        ElrsTelemetry.homeLocation ??= Location(
+          latitude: lat / 1e7,
+          longitude: lon / 1e7,
+          altitude: gpsAltitude.toDouble(),
+          heading: gpsHeading / 100,
+        );
+        ElrsTelemetry.uavLocation!.latitude = lat / 1e7;
+        ElrsTelemetry.uavLocation!.longitude = lon / 1e7;
+        ElrsTelemetry.uavLocation!.altitude = gpsAltitude.toDouble();
+        ElrsTelemetry.uavLocation!.heading = gpsHeading / 100;
+        ElrsTelemetry.uavLocation!.groundSpeed = groundSpeed / 10;
+        ElrsTelemetry.uavLocation!.gpsSatellites = gpsSatellites;
         break;
       case PacketType.vario: //0x07
         int varioAltitude = packet.payload
@@ -47,6 +60,7 @@ class ElrsTelem {
             .buffer
             .asByteData()
             .getInt16(0); // / 10, m/s
+        ElrsTelemetry.altitude = varioAltitude / 10;
         break;
       case PacketType.batterySensor: //0x08
         int voltage = packet.payload
@@ -65,6 +79,16 @@ class ElrsTelem {
             .asByteData()
             .getInt32(0); // mAh
         int soc = packet.payload[7]; // 0-100, %
+        ElrsTelemetry.batterySensor ??= BatterySensor(
+          voltage: voltage / 10,
+          current: current / 10,
+          capacity: capacity,
+          percentage: soc,
+        );
+        ElrsTelemetry.batterySensor!.voltage = voltage / 10;
+        ElrsTelemetry.batterySensor!.current = current / 10;
+        ElrsTelemetry.batterySensor!.capacity = capacity;
+        ElrsTelemetry.batterySensor!.percentage = soc;
         break;
       case PacketType.baroAltitude: //0x09
         int altitude;
@@ -76,6 +100,7 @@ class ElrsTelem {
               .buffer
               .asByteData()
               .getUint16(0); // meters
+          ElrsTelemetry.altitude = altitude.toDouble();
         } else {
           //Altitude is in decimeters
           altitude = packet.payload
@@ -83,12 +108,14 @@ class ElrsTelem {
               .buffer
               .asByteData()
               .getUint16(0); // - 10000, decimeters
+          ElrsTelemetry.altitude = (altitude - 10000) / 10;
         }
         int verticalSpeed = packet.payload
             .sublist(2, 4)
             .buffer
             .asByteData()
             .getInt16(0); //, cm/s
+        ElrsTelemetry.varioSpeed = verticalSpeed / 100;
         break;
       case PacketType.heartbeat: //0x0B
         int originDeviceAddress = packet.payload[0];
@@ -103,6 +130,18 @@ class ElrsTelem {
             .asByteData()
             .getUint16(0);
         int pitModeAndPower = packet.payload[5];
+        ElrsTelemetry.videoTransmitter ??= VideoTransmitter(
+          originAddress: originAddress,
+          status: status,
+          bandChannel: bandChannel,
+          userFrequency: userFrequency,
+          pitModeAndPower: pitModeAndPower,
+        );
+        ElrsTelemetry.videoTransmitter!.originAddress = originAddress;
+        ElrsTelemetry.videoTransmitter!.status = status;
+        ElrsTelemetry.videoTransmitter!.bandChannel = bandChannel;
+        ElrsTelemetry.videoTransmitter!.userFrequency = userFrequency;
+        ElrsTelemetry.videoTransmitter!.pitModeAndPower = pitModeAndPower;
       case PacketType.opentxSync: //0x10
       case PacketType.linkStatistics: //0x14
         int uplinkRssi1 = packet.payload[0];
@@ -115,6 +154,29 @@ class ElrsTelem {
         int downlinkRssi = packet.payload[7];
         int downlinkLinkQuality = packet.payload[8];
         int downlinkSnr = packet.payload[9];
+
+        ElrsTelemetry.linkStatistics ??= LinkStatistics(
+          uplinkRssi1: uplinkRssi1,
+          uplinkRssi2: uplinkRssi2,
+          uplinkLinkQuality: uplinkLinkQuality,
+          uplinkSnr: uplinkSnr,
+          activeAntenna: activeAntenna,
+          rfMode: rfMode,
+          uplinkTxPower: uplinkTxPower,
+          downlinkRssi: downlinkRssi,
+          downlinkLinkQuality: downlinkLinkQuality,
+          downlinkSnr: downlinkSnr,
+        );
+        ElrsTelemetry.linkStatistics!.uplinkRssi1 = uplinkRssi1;
+        ElrsTelemetry.linkStatistics!.uplinkRssi2 = uplinkRssi2;
+        ElrsTelemetry.linkStatistics!.uplinkLinkQuality = uplinkLinkQuality;
+        ElrsTelemetry.linkStatistics!.uplinkSnr = uplinkSnr;
+        ElrsTelemetry.linkStatistics!.activeAntenna = activeAntenna;
+        ElrsTelemetry.linkStatistics!.rfMode = rfMode;
+        ElrsTelemetry.linkStatistics!.uplinkTxPower = uplinkTxPower;
+        ElrsTelemetry.linkStatistics!.downlinkRssi = downlinkRssi;
+        ElrsTelemetry.linkStatistics!.downlinkLinkQuality = downlinkLinkQuality;
+        ElrsTelemetry.linkStatistics!.downlinkSnr = downlinkSnr;
         break;
       case PacketType.rcChannelsPacked: //0x16
         break;
@@ -140,6 +202,14 @@ class ElrsTelem {
             .buffer
             .asByteData()
             .getInt16(0); // / 10000, degrees
+        ElrsTelemetry.attitude ??= Attitude(
+          roll: roll / 10000,
+          pitch: pitch / 10000,
+          yaw: yaw / 10000,
+        );
+        ElrsTelemetry.attitude!.roll = roll / 10000;
+        ElrsTelemetry.attitude!.pitch = pitch / 10000;
+        ElrsTelemetry.attitude!.yaw = yaw / 10000;
         break;
       case PacketType.flightMode: //0x21
         break;
@@ -155,11 +225,30 @@ class ElrsTelem {
         }
 
         String deviceName = String.fromCharCodes(sublist.sublist(0, nullIndex));
-        // 4 bytes empty
-        // 4 bytes empty
-        // 4 bytes empty
+        String serialNumber = String.fromCharCodes(
+          sublist.sublist(nullIndex + 1, nullIndex + 5),
+        );
+        int hardwareVersion = sublist
+            .sublist(nullIndex + 5, nullIndex + 9)
+            .buffer
+            .asByteData()
+            .getUint32(0);
+        String softwareVersion = sublist
+            .sublist(nullIndex + 10, nullIndex + 13)
+            .map((e) => e.toString())
+            .join('.');
         int maxMspParameter = packet.payload[nullIndex + 12];
         int parameterVersion = packet.payload[nullIndex + 13];
+        ElrsTelemetry.deviceInfo ??= DeviceInfo(
+          destination: destination,
+          origin: origin,
+          deviceName: deviceName,
+          serialNumber: serialNumber,
+          hardwareVersion: hardwareVersion,
+          softwareVersion: softwareVersion,
+          maxMspParameter: maxMspParameter,
+          parameterVersion: parameterVersion,
+        );
         break;
       case PacketType.parameterSettingsEntry: //0x2B
         break;
@@ -172,18 +261,17 @@ class ElrsTelem {
       case PacketType.command: //0x32
         break;
       case PacketType.radioId: //RADIO 0x3A
-        int radioAddress = packet.payload
-            .sublist(0, 2)
-            .buffer
-            .asByteData()
-            .getUint16(0);
-        int timingCorrectionFrame = packet.payload[2];
-        int updateInterval = packet.payload
-            .sublist(3, 7)
-            .buffer
-            .asByteData()
-            .getUint32(0);
-        // int32
+        // int radioAddress = packet.payload
+        //     .sublist(0, 2)
+        //     .buffer
+        //     .asByteData()
+        //     .getUint16(0);
+        // int timingCorrectionFrame = packet.payload[2];
+        // int updateInterval = packet.payload
+        //     .sublist(3, 7)
+        //     .buffer
+        //     .asByteData()
+        //     .getUint32(0);
         break;
       case PacketType.kissReq: //KISS 0x78
         break;
