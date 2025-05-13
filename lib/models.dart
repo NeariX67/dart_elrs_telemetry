@@ -1,4 +1,6 @@
-class ElrsTelemetry {
+import 'package:flutter/widgets.dart';
+
+class ElrsTelemetry with ChangeNotifier {
   static Location? homeLocation;
   static UavLocation? uavLocation;
   static BatterySensor? batterySensor;

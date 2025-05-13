@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'enums.dart';
 
 class ElrsTelem {
-  TelemetryPacket? parsePacket(Uint8List payload) {
+  static TelemetryPacket? parsePacket(Uint8List payload) {
     TelemetryPacket packet = TelemetryPacket.fromBytes(payload);
     if (!packet.isValidCrc) {
       debugPrint('Invalid CRC for packet type: ${packet.packetType}');
@@ -14,7 +14,7 @@ class ElrsTelem {
     return packet;
   }
 
-  void processPacket(TelemetryPacket packet) {
+  static void processPacket(TelemetryPacket packet) {
     switch (packet.packetType) {
       case PacketType.gps: //0x02
         int lat = packet.payload
@@ -41,11 +41,13 @@ class ElrsTelem {
             packet.payload.sublist(12, 14).buffer.asByteData().getUint16(0) -
             1000; // offset 1000, meters
         int gpsSatellites = packet.payload[14];
-        ElrsTelemetry.homeLocation ??= Location(
+        ElrsTelemetry.uavLocation ??= UavLocation(
           latitude: lat / 1e7,
           longitude: lon / 1e7,
           altitude: gpsAltitude.toDouble(),
           heading: gpsHeading / 100,
+          groundSpeed: groundSpeed / 10,
+          gpsSatellites: gpsSatellites,
         );
         ElrsTelemetry.uavLocation!.latitude = lat / 1e7;
         ElrsTelemetry.uavLocation!.longitude = lon / 1e7;
@@ -74,10 +76,10 @@ class ElrsTelem {
             .asByteData()
             .getInt16(0); // / 10, A
         int capacity = packet.payload
-            .sublist(4, 7)
+            .sublist(4, 6)
             .buffer
             .asByteData()
-            .getInt32(0); // mAh
+            .getInt16(0); // mAh
         int soc = packet.payload[7]; // 0-100, %
         ElrsTelemetry.batterySensor ??= BatterySensor(
           voltage: voltage / 10,
