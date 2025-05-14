@@ -1,19 +1,21 @@
 import 'package:flutter/widgets.dart';
 
 class ElrsTelemetry with ChangeNotifier {
-  static Location? homeLocation;
-  static UavLocation? uavLocation;
-  static BatterySensor? batterySensor;
-  static VideoTransmitter? videoTransmitter;
-  static LinkStatistics? linkStatistics;
-  static Attitude? attitude;
-  static DeviceInfo? deviceInfo;
+  Location? homeLocation;
+  UavLocation? uavLocation;
+  BatterySensor? batterySensor;
+  VideoTransmitter? videoTransmitter;
+  LinkStatistics? linkStatistics;
+  Attitude? attitude;
+  DeviceInfo? deviceInfo;
+  AltitudeVario? altitudeVario;
 
-  static double? altitude; // m
-  static double? varioSpeed; // m/s
+  void update() {
+    notifyListeners();
+  }
 }
 
-class Location {
+class Location with ChangeNotifier {
   double latitude;
   double longitude;
   double altitude;
@@ -27,6 +29,10 @@ class Location {
     this.heading,
     // required this.altitudeAboveGround,
   });
+
+  void update() {
+    notifyListeners();
+  }
 }
 
 class UavLocation extends Location {
@@ -43,7 +49,7 @@ class UavLocation extends Location {
   });
 }
 
-class BatterySensor {
+class BatterySensor with ChangeNotifier {
   double voltage; // V
   double current; // A
   int capacity; // mAh
@@ -56,9 +62,13 @@ class BatterySensor {
     required this.percentage,
   });
   double get power => voltage * current; // W
+
+  void update() {
+    notifyListeners();
+  }
 }
 
-class VideoTransmitter {
+class VideoTransmitter with ChangeNotifier {
   //I have no idea what these values mean
   int originAddress;
   int status;
@@ -73,9 +83,13 @@ class VideoTransmitter {
     required this.userFrequency,
     required this.pitModeAndPower,
   });
+
+  void update() {
+    notifyListeners();
+  }
 }
 
-class LinkStatistics {
+class LinkStatistics with ChangeNotifier {
   int uplinkRssi1;
   int uplinkRssi2;
   int uplinkLinkQuality;
@@ -99,17 +113,25 @@ class LinkStatistics {
     required this.downlinkLinkQuality,
     required this.downlinkSnr,
   });
+
+  void update() {
+    notifyListeners();
+  }
 }
 
-class Attitude {
+class Attitude with ChangeNotifier {
   double roll;
   double pitch;
   double yaw;
 
   Attitude({required this.roll, required this.pitch, required this.yaw});
+
+  void update() {
+    notifyListeners();
+  }
 }
 
-class DeviceInfo {
+class DeviceInfo with ChangeNotifier {
   int destination;
   int origin;
   String deviceName;
@@ -129,6 +151,21 @@ class DeviceInfo {
     required this.maxMspParameter,
     required this.parameterVersion,
   });
+
+  void update() {
+    notifyListeners();
+  }
+}
+
+class AltitudeVario with ChangeNotifier {
+  double altitude; // m
+  double varioSpeed; // m/s
+
+  AltitudeVario({required this.altitude, required this.varioSpeed});
+
+  void update() {
+    notifyListeners();
+  }
 }
 
 // class RadioId {
