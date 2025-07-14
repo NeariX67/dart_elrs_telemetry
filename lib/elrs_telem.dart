@@ -174,13 +174,13 @@ class ElrsTelem {
         int uplinkRssi1 = -(255 - packet.payload[0]);
         int uplinkRssi2 = -(255 - packet.payload[1]);
         int uplinkLinkQuality = packet.payload[2];
-        int uplinkSnr = packet.payload[3];
+        int uplinkSnr = convertUint8ToInt8(packet.payload[3]);
         int activeAntenna = packet.payload[4] + 1;
         int rfMode = convertRfMode(packet.payload[5]);
         int uplinkTxPower = convertRfPower(packet.payload[6]);
         int downlinkRssi = -(255 - packet.payload[7]);
         int downlinkLinkQuality = packet.payload[8];
-        int downlinkSnr = packet.payload[9];
+        int downlinkSnr = convertUint8ToInt8(packet.payload[9]);
 
         if (telemetry.linkStatistics == null) {
           telemetry.linkStatistics = LinkStatistics(
@@ -337,6 +337,13 @@ class ElrsTelem {
       default:
         debugPrint('Unhandled packet type: ${packet.packetType}');
     }
+  }
+
+  static int convertUint8ToInt8(int value) {
+    if (value > 127) {
+      return value - 256;
+    }
+    return value;
   }
 
   static int convertRfMode(int rfMode) {
